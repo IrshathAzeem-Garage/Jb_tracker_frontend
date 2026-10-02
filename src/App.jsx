@@ -6,6 +6,7 @@ import { ToastProvider } from './context/ToastContext';
 import { DashboardLayout } from './layouts/DashboardLayout';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 // Lazy-loaded pages for mobile performance optimization
 const Orders = lazy(() => import('./pages/Orders').then(m => ({ default: m.Orders })));
@@ -74,11 +75,12 @@ const ProtectedRoute = ({ children }) => {
 
 export function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <ToastProvider>
-          <BrowserRouter>
-            <Routes>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <ToastProvider>
+            <BrowserRouter>
+              <Routes>
               {/* Public Auth */}
               <Route path="/login" element={<Login />} />
 
@@ -115,6 +117,7 @@ export function App() {
         </ToastProvider>
       </AuthProvider>
     </QueryClientProvider>
+  </ErrorBoundary>
   );
 }
 

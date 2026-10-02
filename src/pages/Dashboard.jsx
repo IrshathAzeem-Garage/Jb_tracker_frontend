@@ -97,8 +97,17 @@ export const Dashboard = () => {
     );
   }
 
-  const { metrics, charts, alerts, recentActivity } = data;
-  const isBusinessEmpty = metrics.totalInvestment === 0 && metrics.totalOrders === 0;
+  const metrics = data?.metrics || {};
+  const charts = data?.charts || {};
+  const alerts = data?.alerts || {};
+  const recentOrders = Array.isArray(data?.recentOrders)
+    ? data.recentOrders
+    : Array.isArray(data?.recentActivity?.orders)
+    ? data.recentActivity.orders
+    : Array.isArray(data?.recentActivity)
+    ? data.recentActivity
+    : [];
+  const isBusinessEmpty = (metrics.totalInvestment || 0) === 0 && (metrics.totalOrders || 0) === 0;
 
   return (
     <div className="space-y-5 sm:space-y-8 pb-8">
@@ -452,57 +461,69 @@ export const Dashboard = () => {
 
         {/* Mobile Recent Orders (<640px) */}
         <div className="sm:hidden space-y-2.5">
-          {recentActivity.orders.slice(0, 4).map((o) => (
-            <Link
-              key={o.id}
-              to={`/orders/${o.id}`}
-              className="block p-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-2 hover:bg-slate-50 transition-colors"
-            >
-              <div className="flex items-start justify-between">
-                <div>
-                  <span className="font-mono text-xs font-bold text-slate-900">{o.order_number}</span>
-                  <p className="text-xs font-bold text-slate-800">{o.customer_name}</p>
+          {recentOrders.length === 0 ? (
+            <div className="p-4 bg-white rounded-2xl border border-slate-200 text-center text-xs text-slate-400">
+              No recent orders found.
+            </div>
+          ) : (
+            recentOrders.slice(0, 4).map((o) => (
+              <Link
+                key={o.id}
+                to={`/orders/${o.id}`}
+                className="block p-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-2 hover:bg-slate-50 transition-colors"
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <span className="font-mono text-xs font-bold text-slate-900">{o.order_number}</span>
+                    <p className="text-xs font-bold text-slate-800">{o.customer_name}</p>
+                  </div>
+                  <StatusBadge status={o.status} />
                 </div>
-                <StatusBadge status={o.status} />
-              </div>
-              <div className="flex items-center justify-between text-xs font-mono pt-1 border-t border-slate-100">
-                <span className="text-slate-500 font-sans font-medium">Value: <strong>{formatCurrency(o.total_amount)}</strong></span>
-                <span className="text-emerald-700 font-bold">Profit: {formatCurrency(o.gross_profit)}</span>
-              </div>
-            </Link>
-          ))}
+                <div className="flex items-center justify-between text-xs font-mono pt-1 border-t border-slate-100">
+                  <span className="text-slate-500 font-sans font-medium">Value: <strong>{formatCurrency(o.total_amount)}</strong></span>
+                  <span className="text-emerald-700 font-bold">Profit: {formatCurrency(o.gross_profit)}</span>
+                </div>
+              </Link>
+            ))
+          )}
         </div>
 
         {/* Desktop Recent Orders (>=640px) */}
         <div className="hidden sm:block bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
-              <tr>
-                <th className="py-3 px-4">Order #</th>
-                <th className="py-3 px-4">Customer</th>
-                <th className="py-3 px-4 text-right">Value</th>
-                <th className="py-3 px-4 text-right">Profit</th>
-                <th className="py-3 px-4 text-center">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 font-medium">
-              {recentActivity.orders.slice(0, 5).map((o) => (
-                <tr key={o.id} className="hover:bg-slate-50">
-                  <td className="py-3 px-4 font-mono font-bold text-slate-900">
-                    <Link to={`/orders/${o.id}`} className="hover:underline">
-                      {o.order_number}
-                    </Link>
-                  </td>
-                  <td className="py-3 px-4 font-semibold text-slate-900">{o.customer_name}</td>
-                  <td className="py-3 px-4 text-right font-mono font-bold">{formatCurrency(o.total_amount)}</td>
-                  <td className="py-3 px-4 text-right font-mono text-emerald-700 font-bold">{formatCurrency(o.gross_profit)}</td>
-                  <td className="py-3 px-4 text-center">
-                    <StatusBadge status={o.status} />
-                  </td>
+          {recentOrders.length === 0 ? (
+            <div className="p-6 text-center text-xs text-slate-400">
+              No recent orders found.
+            </div>
+          ) : (
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
+                <tr>
+                  <th className="py-3 px-4">Order #</th>
+                  <th className="py-3 px-4">Customer</th>
+                  <th className="py-3 px-4 text-right">Value</th>
+                  <th className="py-3 px-4 text-right">Profit</th>
+                  <th className="py-3 px-4 text-center">Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-medium">
+                {recentOrders.slice(0, 5).map((o) => (
+                  <tr key={o.id} className="hover:bg-slate-50">
+                    <td className="py-3 px-4 font-mono font-bold text-slate-900">
+                      <Link to={`/orders/${o.id}`} className="hover:underline">
+                        {o.order_number}
+                      </Link>
+                    </td>
+                    <td className="py-3 px-4 font-semibold text-slate-900">{o.customer_name}</td>
+                    <td className="py-3 px-4 text-right font-mono font-bold">{formatCurrency(o.total_amount)}</td>
+                    <td className="py-3 px-4 text-right font-mono text-emerald-700 font-bold">{formatCurrency(o.gross_profit)}</td>
+                    <td className="py-3 px-4 text-center">
+                      <StatusBadge status={o.status} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </section>
 
