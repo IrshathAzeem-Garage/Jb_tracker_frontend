@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { AlertCircle, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
-import { Modal } from '../common/Modal';
+import { AlertCircle, CheckCircle2, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
+import { ResponsiveModal } from '../common/ResponsiveModal';
 import api from '../../services/api';
 import { formatCurrency } from '../../utils/formatters';
 
@@ -26,6 +26,10 @@ export const AddPaymentModal = ({
 
   const isCustomer = type === 'CUSTOMER';
 
+  const numAmount = parseFloat(amount || 0);
+  const outstanding = maxAmount !== null ? parseFloat(maxAmount) : null;
+  const remaining = outstanding !== null ? Math.max(0, outstanding - numAmount) : null;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -33,6 +37,11 @@ export const AddPaymentModal = ({
     const parsedAmount = parseFloat(amount);
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
       setError('Payment amount must be greater than zero.');
+      return;
+    }
+
+    if (isCustomer && outstanding !== null && parsedAmount > outstanding + 0.01) {
+      setError(`Amount cannot exceed the total balance outstanding (${formatCurrency(outstanding)}).`);
       return;
     }
 
@@ -74,35 +83,35 @@ export const AddPaymentModal = ({
   };
 
   return (
-    <Modal
+    <ResponsiveModal
       isOpen={isOpen}
       onClose={onClose}
-      title={isCustomer ? 'Record Customer Payment (Money In)' : 'Disburse Supplier Payment (Money Out)'}
+      title={isCustomer ? 'Record Customer Payment' : 'Disburse Supplier Payment'}
       subtitle={
         isCustomer
-          ? 'Credits cash balance and marks order receivable as paid'
-          : 'Debits cash balance and marks supplier payable as disbursed'
+          ? 'Credits cash ledger & reduces customer balance'
+          : 'Debits cash ledger & marks supplier payable'
       }
       maxWidth="max-w-lg"
     >
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-center gap-2">
+        <div className="mb-4 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-center gap-2">
           <AlertCircle className="w-4 h-4 shrink-0" />
-          {error}
+          <span>{error}</span>
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {!isCustomer && (
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
               Select Supplier *
             </label>
             <select
               value={selectedSupplierId}
               onChange={(e) => setSelectedSupplierId(e.target.value)}
               required
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:outline-none"
+              className="w-full min-h-[44px] px-3.5 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-slate-900 focus:outline-none"
             >
               <option value="">Select Supplier...</option>
               {suppliers.map((s) => (
@@ -114,36 +123,49 @@ export const AddPaymentModal = ({
           </div>
         )}
 
+        {/* Amount Input with Live Remaining Balance Preview */}
         <div>
-          <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center justify-between mb-1.5">
             <label className="block text-xs font-semibold text-slate-700">
-              Amount (₹) *
+              Payment Amount (₹) *
             </label>
-            {maxAmount !== null && (
+            {outstanding !== null && (
               <span className="text-[11px] text-slate-500 font-medium">
-                Outstanding: <strong>{formatCurrency(maxAmount)}</strong>
+                Outstanding: <strong>{formatCurrency(outstanding)}</strong>
               </span>
             )}
           </div>
           <div className="relative">
-            <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 font-bold">
+            <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 font-bold text-base pointer-events-none">
               ₹
             </span>
             <input
               type="number"
+              inputMode="decimal"
               step="0.01"
               min="0.01"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               required
-              className="w-full pl-8 pr-4 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:outline-none font-mono font-bold"
+              placeholder="0.00"
+              className="w-full min-h-[44px] pl-8 pr-4 py-2.5 text-base border border-slate-300 rounded-xl focus:ring-2 focus:ring-slate-900 focus:outline-none font-mono font-bold"
             />
           </div>
+
+          {/* Real-time remaining balance calculation */}
+          {outstanding !== null && numAmount > 0 && (
+            <div className="mt-2 p-2.5 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
+              <span className="text-slate-500">Remaining Balance After Payment:</span>
+              <span className={`font-mono font-bold ${remaining <= 0 ? 'text-emerald-700' : 'text-amber-700'}`}>
+                {remaining <= 0 ? '₹0.00 (Fully Settled)' : formatCurrency(remaining)}
+              </span>
+            </div>
+          )}
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
               Payment Date *
             </label>
             <input
@@ -151,21 +173,21 @@ export const AddPaymentModal = ({
               value={paymentDate}
               onChange={(e) => setPaymentDate(e.target.value)}
               required
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:outline-none"
+              className="w-full min-h-[44px] px-3.5 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-slate-900 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
               Payment Method *
             </label>
             <select
               value={paymentMethod}
               onChange={(e) => setPaymentMethod(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:outline-none font-medium"
+              className="w-full min-h-[44px] px-3.5 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-slate-900 focus:outline-none font-medium"
             >
-              <option value="BANK_TRANSFER">Bank Transfer (NEFT/RTGS/IMPS)</option>
-              <option value="UPI">UPI (GPay / PhonePe / QR)</option>
+              <option value="BANK_TRANSFER">Bank Transfer (NEFT/RTGS)</option>
+              <option value="UPI">UPI (GPay / PhonePe)</option>
               <option value="CASH">Cash</option>
               <option value="CARD">Credit / Debit Card</option>
               <option value="OTHER">Other</option>
@@ -174,58 +196,50 @@ export const AddPaymentModal = ({
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">
+          <label className="block text-xs font-semibold text-slate-700 mb-1.5">
             Reference / UTR / Transaction ID
           </label>
           <input
             type="text"
             value={referenceNumber}
             onChange={(e) => setReferenceNumber(e.target.value)}
-            placeholder="e.g. UTR-982103445 or UPI-REF-1102"
-            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:outline-none font-mono text-xs"
+            placeholder="e.g. UTR-982103445"
+            className="w-full min-h-[44px] px-3.5 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-slate-900 focus:outline-none font-mono text-xs"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">
+          <label className="block text-xs font-semibold text-slate-700 mb-1.5">
             Notes / Remarks
           </label>
           <input
             type="text"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="e.g. 50% advance against procurement"
-            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:outline-none text-xs"
+            placeholder="Optional remarks"
+            className="w-full min-h-[44px] px-3.5 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-slate-900 focus:outline-none text-xs"
           />
         </div>
 
-        {/* Ledger Confirmation Callout */}
-        <div className={`p-3 rounded-lg border text-xs flex items-center gap-2 ${
-          isCustomer ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-amber-50 border-amber-200 text-amber-800'
-        }`}>
-          {isCustomer ? <ArrowDownLeft className="w-4 h-4 text-emerald-600 shrink-0" /> : <ArrowUpRight className="w-4 h-4 text-amber-600 shrink-0" />}
-          <span>
-            This transaction will update the <strong>Central Cash Ledger ({isCustomer ? 'Money In' : 'Money Out'})</strong> atomically.
-          </span>
-        </div>
-
-        <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+        <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+            className="min-h-[44px] px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={submitting}
-            className="px-5 py-2 text-sm font-bold text-white bg-slate-900 rounded-lg hover:bg-slate-800 transition-colors shadow-sm disabled:opacity-50"
+            className="min-h-[44px] flex-1 sm:flex-none px-6 py-2.5 rounded-xl bg-slate-900 text-sm font-bold text-white hover:bg-slate-800 transition-colors shadow-sm disabled:opacity-60 flex items-center justify-center gap-2"
           >
-            {submitting ? 'Recording...' : 'Record Payment'}
+            {submitting ? 'Recording...' : 'Record Transaction'}
           </button>
         </div>
       </form>
-    </Modal>
+    </ResponsiveModal>
   );
 };
+
+export default AddPaymentModal;

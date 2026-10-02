@@ -3,7 +3,7 @@ import 'jspdf-autotable';
 
 export const exportToCSV = (filename, headers, rows) => {
   if (!rows || !rows.length) {
-    alert('No data available to export');
+    console.warn('No data available to export');
     return;
   }
 

@@ -2,6 +2,10 @@ import React, { useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from '../components/common/Sidebar';
 import { Header } from '../components/common/Header';
+import { MobileHeader } from '../components/common/MobileHeader';
+import { MobileBottomNav } from '../components/common/MobileBottomNav';
+import { MobileDrawer } from '../components/common/MobileDrawer';
+import { NetworkBanner } from '../components/common/NetworkBanner';
 
 const routeTitles = {
   '/': { title: 'Executive Dashboard', subtitle: 'Overview of company performance & cash position' },
@@ -17,7 +21,7 @@ const routeTitles = {
 };
 
 export const DashboardLayout = () => {
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const location = useLocation();
 
   // Find matching title for current path
@@ -36,21 +40,45 @@ export const DashboardLayout = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-      {/* Sidebar */}
-      <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
+    <div className="min-h-screen bg-slate-50 flex flex-col antialiased">
+      {/* Network connectivity banner */}
+      <NetworkBanner />
+
+      {/* Desktop Sidebar (hidden on mobile) */}
+      <div className="hidden lg:block">
+        <Sidebar mobileOpen={false} setMobileOpen={() => {}} />
+      </div>
+
+      {/* Mobile Drawer (slides from left on mobile) */}
+      <MobileDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 lg:pl-64">
-        <Header
-          onMenuClick={() => setMobileOpen(true)}
+        {/* Mobile Header (<1024px) */}
+        <MobileHeader
+          onMenuClick={() => setDrawerOpen(true)}
           title={pageInfo.title}
           subtitle={pageInfo.subtitle}
         />
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+
+        {/* Desktop Header (>=1024px) */}
+        <div className="hidden lg:block">
+          <Header
+            title={pageInfo.title}
+            subtitle={pageInfo.subtitle}
+          />
+        </div>
+
+        {/* Page Content with bottom navigation spacing on mobile */}
+        <main className="flex-1 p-3.5 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-24 lg:pb-8">
           <Outlet />
         </main>
+
+        {/* Mobile Bottom Navigation Bar (<1024px) */}
+        <MobileBottomNav onOpenMore={() => setDrawerOpen(true)} />
       </div>
     </div>
   );
 };
+
+export default DashboardLayout;

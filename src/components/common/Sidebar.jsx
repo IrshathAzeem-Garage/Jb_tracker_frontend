@@ -50,9 +50,11 @@ export const Sidebar = ({ mobileOpen, setMobileOpen }) => {
       >
         {/* Brand Header */}
         <div className="flex items-center gap-3 px-6 h-16 border-b border-slate-800">
-          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-white text-slate-950 font-black text-xl tracking-tight shadow-md">
-            JB
-          </div>
+          <img
+            src="/logo.png"
+            alt="JBT Logo"
+            className="w-10 h-10 rounded-xl object-contain bg-black shadow-md border border-slate-800 shrink-0"
+          />
           <div className="flex flex-col">
             <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">
               Just Business Things

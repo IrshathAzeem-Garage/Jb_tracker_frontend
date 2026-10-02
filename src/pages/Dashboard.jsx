@@ -3,8 +3,6 @@ import { Link } from 'react-router-dom';
 import {
   Wallet,
   TrendingUp,
-  CreditCard,
-  DollarSign,
   ArrowUpRight,
   ArrowDownLeft,
   AlertTriangle,
@@ -12,16 +10,16 @@ import {
   Briefcase,
   AlertCircle,
   Plus,
-  FileText,
-  PieChart as PieIcon,
   BarChart2,
   Activity,
   Layers,
+  DollarSign,
+  ChevronRight,
+  Receipt,
+  CreditCard,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
-  LineChart,
-  Line,
   BarChart,
   Bar,
   PieChart,
@@ -38,14 +36,23 @@ import { formatCurrency, formatPercentage, formatDate } from '../utils/formatter
 import { MetricCard } from '../components/common/MetricCard';
 import { LoadingSkeleton } from '../components/common/LoadingSkeleton';
 import { OrderFormModal } from '../components/orders/OrderFormModal';
+import { StatusBadge } from '../components/common/StatusBadge';
+import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 
 const PIE_COLORS = ['#0f172a', '#334155', '#475569', '#64748b', '#94a3b8', '#cbd5e1'];
 
 export const Dashboard = () => {
+  const { user } = useAuth();
+  const { showToast } = useToast();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [orderModalOpen, setOrderModalOpen] = useState(false);
+
+  // Time-based greeting for mobile
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
 
   const fetchDashboard = async () => {
     try {
@@ -67,7 +74,7 @@ export const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         <LoadingSkeleton rows={4} cols={4} />
         <LoadingSkeleton rows={6} cols={2} />
       </div>
@@ -82,7 +89,7 @@ export const Dashboard = () => {
         <p className="text-sm text-slate-500 mt-1">{error}</p>
         <button
           onClick={fetchDashboard}
-          className="mt-4 px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-semibold hover:bg-slate-800"
+          className="mt-4 min-h-[44px] px-5 py-2.5 bg-slate-900 text-white rounded-xl text-sm font-semibold hover:bg-slate-800"
         >
           Try Again
         </button>
@@ -91,77 +98,166 @@ export const Dashboard = () => {
   }
 
   const { metrics, charts, alerts, recentActivity } = data;
-
-  // Empty business check (Scenario 57)
   const isBusinessEmpty = metrics.totalInvestment === 0 && metrics.totalOrders === 0;
 
   return (
-    <div className="space-y-8 pb-12">
-      {/* Empty State Banner (if completely empty) */}
-      {isBusinessEmpty && (
-        <div className="p-6 bg-white border-2 border-dashed border-slate-300 rounded-2xl text-center space-y-3">
-          <h2 className="text-xl font-extrabold text-slate-900">Welcome to JB Tracker</h2>
-          <p className="text-sm text-slate-500 max-w-lg mx-auto">
-            Start by adding your business partners, recording your initial investment, and creating customer orders.
-          </p>
-          <div className="flex items-center justify-center gap-3 pt-2">
-            <Link
-              to="/partners"
-              className="px-4 py-2 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-slate-800"
-            >
-              Add Partners / Investment
-            </Link>
-            <button
-              onClick={() => setOrderModalOpen(true)}
-              className="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-50"
-            >
-              Create First Order
-            </button>
-          </div>
+    <div className="space-y-5 sm:space-y-8 pb-8">
+      {/* 1. Mobile Greeting & Business Overview Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 pb-3">
+        <div>
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+            {greeting}, {user?.name ? user.name.split(' ')[0] : 'Founder'}
+          </span>
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+            Business Overview
+          </h1>
         </div>
-      )}
-
-      {/* Critical Business Notice: Profit != Cash banner */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl bg-slate-900 text-white shadow-sm border border-slate-800">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-slate-800 border border-slate-700 text-emerald-400">
-            <Activity className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                Core Principle
-              </span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                Verified Separation
-              </span>
-            </div>
-            <p className="text-xs text-slate-300 mt-0.5">
-              Net Profit (<strong>{formatCurrency(metrics.netProfit)}</strong>) is revenue minus expenses. Business Cash (<strong>{formatCurrency(metrics.cashAvailable)}</strong>) is actual liquidity available in bank.
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={() => setOrderModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-slate-950 bg-white rounded-lg hover:bg-slate-100 transition-colors shadow-sm"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Create Order
-          </button>
+        <div className="hidden sm:flex items-center gap-2">
+          <span className="text-xs text-slate-500 font-medium">Real-time ledger updates</span>
         </div>
       </div>
 
-      {/* Top 8 KPI Cards */}
-      <section>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500">
-            Key Financial Indicators
-          </h2>
-          <span className="text-xs text-slate-400 font-medium">Real-time ledger data</span>
+      {/* 2. Mobile Quick Actions Section (Prompt Requirement #8) */}
+      <div className="space-y-2">
+        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block sm:hidden">
+          Quick Actions
+        </span>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <button
+            type="button"
+            onClick={() => setOrderModalOpen(true)}
+            className="touch-target-44 p-3 rounded-2xl bg-slate-900 text-white font-bold text-xs flex items-center justify-center gap-2 hover:bg-slate-800 shadow-sm transition-all"
+          >
+            <Plus className="w-4 h-4 text-emerald-400" />
+            <span>+ Add Order</span>
+          </button>
+
+          <Link
+            to="/expenses"
+            className="touch-target-44 p-3 rounded-2xl bg-white border border-slate-200 text-slate-800 font-bold text-xs flex items-center justify-center gap-2 hover:bg-slate-50 shadow-sm transition-all"
+          >
+            <Receipt className="w-4 h-4 text-slate-500" />
+            <span>+ Add Expense</span>
+          </Link>
+
+          <Link
+            to="/orders"
+            className="touch-target-44 p-3 rounded-2xl bg-white border border-slate-200 text-slate-800 font-bold text-xs flex items-center justify-center gap-2 hover:bg-slate-50 shadow-sm transition-all"
+          >
+            <CreditCard className="w-4 h-4 text-emerald-600" />
+            <span>+ Record Payment</span>
+          </Link>
+
+          <Link
+            to="/partners"
+            className="touch-target-44 p-3 rounded-2xl bg-white border border-slate-200 text-slate-800 font-bold text-xs flex items-center justify-center gap-2 hover:bg-slate-50 shadow-sm transition-all"
+          >
+            <Briefcase className="w-4 h-4 text-slate-500" />
+            <span>+ Add Investment</span>
+          </Link>
+        </div>
+      </div>
+
+      {/* 3. Core Principle Separation Alert: Profit != Cash */}
+      <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-900 text-white shadow-sm border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-xl bg-slate-800 border border-slate-700 text-emerald-400 shrink-0">
+            <Activity className="w-4 h-4 sm:w-5 sm:h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Core Principle
+              </span>
+              <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-emerald-500/20 text-emerald-300">
+                Profit ≠ Cash
+              </span>
+            </div>
+            <p className="text-xs text-slate-300 mt-0.5 leading-snug">
+              Net Profit: <strong>{formatCurrency(metrics.netProfit)}</strong> | Liquid Cash in Hand: <strong>{formatCurrency(metrics.cashAvailable)}</strong>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Compact 2-Column Mobile Financial Cards Grid (<640px) */}
+      <div className="sm:hidden space-y-2.5">
+        <div className="grid grid-cols-2 gap-2.5 font-mono">
+          {/* Money in Hand (Liquid Cash) */}
+          <div className="p-3.5 rounded-2xl bg-slate-900 text-white shadow-sm space-y-1">
+            <div className="flex items-center justify-between text-slate-400 font-sans text-[11px] font-semibold">
+              <span>Money in Hand</span>
+              <Wallet className="w-3.5 h-3.5 text-emerald-400" />
+            </div>
+            <div className="text-base font-extrabold text-white truncate">
+              {formatCurrency(metrics.cashAvailable)}
+            </div>
+            <span className="text-[10px] text-slate-400 font-sans block truncate">
+              Liquid Central Ledger
+            </span>
+          </div>
+
+          {/* Net Profit */}
+          <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-1">
+            <div className="flex items-center justify-between text-slate-500 font-sans text-[11px] font-semibold">
+              <span>Net Profit</span>
+              <BarChart2 className="w-3.5 h-3.5 text-emerald-600" />
+            </div>
+            <div className={`text-base font-extrabold truncate ${metrics.netProfit >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+              {formatCurrency(metrics.netProfit)}
+            </div>
+            <span className="text-[10px] text-slate-400 font-sans block truncate">
+              Margin: {metrics.overallMarginPercentage}%
+            </span>
+          </div>
+
+          {/* Receivable */}
+          <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-1">
+            <div className="flex items-center justify-between text-slate-500 font-sans text-[11px] font-semibold">
+              <span>Receivable</span>
+              <ArrowDownLeft className="w-3.5 h-3.5 text-amber-600" />
+            </div>
+            <div className="text-base font-extrabold text-amber-700 truncate">
+              {formatCurrency(metrics.accountsReceivable)}
+            </div>
+            <span className="text-[10px] text-slate-400 font-sans block truncate">
+              Owed by Customers
+            </span>
+          </div>
+
+          {/* Payable */}
+          <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-1">
+            <div className="flex items-center justify-between text-slate-500 font-sans text-[11px] font-semibold">
+              <span>Payable</span>
+              <ArrowUpRight className="w-3.5 h-3.5 text-rose-600" />
+            </div>
+            <div className="text-base font-extrabold text-rose-700 truncate">
+              {formatCurrency(metrics.accountsPayable)}
+            </div>
+            <span className="text-[10px] text-slate-400 font-sans block truncate">
+              Owed to Suppliers
+            </span>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Secondary Mobile Metrics (Sales & Investments) */}
+        <div className="grid grid-cols-2 gap-2.5 font-mono">
+          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+            <span className="text-[10px] font-sans text-slate-500 block">Total Sales</span>
+            <strong className="text-sm font-bold text-slate-900 block truncate">{formatCurrency(metrics.totalSales)}</strong>
+            <span className="text-[10px] text-slate-400 font-sans block">{metrics.totalOrders} Orders</span>
+          </div>
+          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+            <span className="text-[10px] font-sans text-slate-500 block">Partner Capital</span>
+            <strong className="text-sm font-bold text-slate-900 block truncate">{formatCurrency(metrics.totalPartnerCapital)}</strong>
+            <span className="text-[10px] text-slate-400 font-sans block">Equity Infusions</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 5. Desktop Full KPI Grid (>=640px) */}
+      <section className="hidden sm:block space-y-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard
             title="Total Investment"
             value={formatCurrency(metrics.totalInvestment)}
@@ -224,113 +320,42 @@ export const Dashboard = () => {
         </div>
       </section>
 
-      {/* Business Health Summary */}
-      <section className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-          <div>
-            <h2 className="text-base font-bold text-slate-900 tracking-tight">
-              Business Health Summary
-            </h2>
-            <p className="text-xs text-slate-500 font-medium">
-              Pure factual numbers computed directly from database records without arbitrary scores
-            </p>
-          </div>
-          <Link
-            to="/reports/profit-loss"
-            className="text-xs font-bold text-slate-900 hover:text-slate-700 underline underline-offset-4"
-          >
-            Full P&L Statement →
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4 pt-2">
-          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-            <span className="text-[11px] font-semibold text-slate-500 block">Cash Available</span>
-            <span className="text-base font-bold text-slate-900 font-mono mt-0.5 block">
-              {formatCurrency(metrics.cashAvailable)}
-            </span>
-          </div>
-
-          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-            <span className="text-[11px] font-semibold text-slate-500 block">Receivables</span>
-            <span className="text-base font-bold text-amber-700 font-mono mt-0.5 block">
-              {formatCurrency(metrics.accountsReceivable)}
-            </span>
-          </div>
-
-          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-            <span className="text-[11px] font-semibold text-slate-500 block">Payables</span>
-            <span className="text-base font-bold text-rose-700 font-mono mt-0.5 block">
-              {formatCurrency(metrics.accountsPayable)}
-            </span>
-          </div>
-
-          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-            <span className="text-[11px] font-semibold text-slate-500 block">Net Profit</span>
-            <span className="text-base font-bold text-emerald-700 font-mono mt-0.5 block">
-              {formatCurrency(metrics.netProfit)}
-            </span>
-          </div>
-
-          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-            <span className="text-[11px] font-semibold text-slate-500 block">Profit Margin</span>
-            <span className="text-base font-bold text-slate-900 font-mono mt-0.5 block">
-              {metrics.overallMarginPercentage}%
-            </span>
-          </div>
-
-          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-            <span className="text-[11px] font-semibold text-slate-500 block">Customer Paid</span>
-            <span className="text-base font-bold text-slate-900 font-mono mt-0.5 block">
-              {formatCurrency(metrics.totalCustomerPayments)}
-            </span>
-          </div>
-
-          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-            <span className="text-[11px] font-semibold text-slate-500 block">Supplier Paid</span>
-            <span className="text-base font-bold text-slate-900 font-mono mt-0.5 block">
-              {formatCurrency(metrics.totalSupplierPayments)}
-            </span>
-          </div>
-        </div>
-      </section>
-
-      {/* Priority Alerts Section */}
+      {/* 6. Operational Alerts Section */}
       {(alerts.overdueCustomers?.length > 0 ||
         alerts.pendingSuppliers?.length > 0 ||
         alerts.upcomingDeliveries?.length > 0 ||
         alerts.marginAlerts?.length > 0) && (
         <section className="space-y-3">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-500" />
             Operational Alerts
-          </h2>
+          </h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Margin Warnings (Requirement 48) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {/* Margin Warnings */}
             {alerts.marginAlerts?.map((a) => (
               <div
                 key={a.id}
-                className={`p-4 rounded-xl border text-xs flex items-start justify-between gap-3 ${
+                className={`p-3.5 rounded-xl border text-xs flex items-start justify-between gap-3 ${
                   a.alert_type === 'LOSS_MAKING'
                     ? 'bg-rose-50 border-rose-200 text-rose-900'
                     : 'bg-amber-50 border-amber-200 text-amber-900'
                 }`}
               >
                 <div>
-                  <div className="flex items-center gap-2 font-bold">
+                  <div className="flex items-center gap-1.5 font-bold">
                     <span>{a.alert_type === 'LOSS_MAKING' ? '⚠️ Loss-making Order' : '⚡ Low Margin Order'}</span>
                     <span className="px-1.5 py-0.5 rounded bg-white font-mono text-[10px]">
                       {a.order_number}
                     </span>
                   </div>
-                  <p className="mt-1">
-                    {a.customer_name} — Total: {formatCurrency(a.total_amount)} | Cost: {formatCurrency(a.total_cost)} | Profit: <strong>{formatCurrency(a.gross_profit)}</strong> ({a.margin_percentage}%)
+                  <p className="mt-1 text-[11px]">
+                    {a.customer_name} — Total: {formatCurrency(a.total_amount)} | Profit: <strong>{formatCurrency(a.gross_profit)}</strong> ({a.margin_percentage}%)
                   </p>
                 </div>
                 <Link
                   to={`/orders/${a.id}`}
-                  className="px-2.5 py-1 rounded bg-white text-slate-800 font-bold hover:bg-slate-100 shrink-0"
+                  className="touch-target-44 px-3 py-1.5 rounded-lg bg-white text-slate-800 font-bold hover:bg-slate-100 shrink-0 text-center"
                 >
                   View
                 </Link>
@@ -341,46 +366,22 @@ export const Dashboard = () => {
             {alerts.overdueCustomers?.slice(0, 2).map((c) => (
               <div
                 key={c.id}
-                className="p-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-900 text-xs flex items-start justify-between gap-3"
+                className="p-3.5 rounded-xl border border-amber-200 bg-amber-50 text-amber-900 text-xs flex items-start justify-between gap-3"
               >
                 <div>
                   <span className="font-bold flex items-center gap-1.5">
                     <ArrowDownLeft className="w-4 h-4 text-amber-600" />
                     Customer Balance Pending: {c.order_number}
                   </span>
-                  <p className="mt-1">
-                    {c.customer_name} owes <strong>{formatCurrency(c.outstanding)}</strong> (Paid {formatCurrency(c.paid)} of {formatCurrency(c.total_amount)})
+                  <p className="mt-1 text-[11px]">
+                    {c.customer_name} owes <strong>{formatCurrency(c.outstanding)}</strong>
                   </p>
                 </div>
                 <Link
                   to={`/orders/${c.id}`}
-                  className="px-2.5 py-1 rounded bg-white text-slate-800 font-bold hover:bg-slate-100 shrink-0"
+                  className="touch-target-44 px-3 py-1.5 rounded-lg bg-white text-slate-800 font-bold hover:bg-slate-100 shrink-0 text-center"
                 >
                   Collect
-                </Link>
-              </div>
-            ))}
-
-            {/* Upcoming Deliveries */}
-            {alerts.upcomingDeliveries?.slice(0, 2).map((d) => (
-              <div
-                key={d.id}
-                className="p-4 rounded-xl border border-sky-200 bg-sky-50 text-sky-900 text-xs flex items-start justify-between gap-3"
-              >
-                <div>
-                  <span className="font-bold flex items-center gap-1.5">
-                    <Clock className="w-4 h-4 text-sky-600" />
-                    Delivery Due Soon: {d.order_number}
-                  </span>
-                  <p className="mt-1">
-                    {d.customer_name} expected delivery by <strong>{formatDate(d.expected_delivery_date)}</strong>
-                  </p>
-                </div>
-                <Link
-                  to={`/orders/${d.id}`}
-                  className="px-2.5 py-1 rounded bg-white text-slate-800 font-bold hover:bg-slate-100 shrink-0"
-                >
-                  Check
                 </Link>
               </div>
             ))}
@@ -388,25 +389,25 @@ export const Dashboard = () => {
         </section>
       )}
 
-      {/* Recharts Analytics Grid */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* 1. Monthly Sales & Gross Profit Line/Bar Chart */}
-        <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-4">
+      {/* 7. Recharts Analytics Grid with mobile-responsive width & height */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* Monthly Sales & Profit */}
+        <div className="p-4 sm:p-6 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-3 min-w-0 overflow-hidden">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-slate-900">Monthly Sales & Gross Profit</h3>
-            <span className="text-xs text-slate-400">Delivered & confirmed</span>
+            <span className="text-[11px] text-slate-400">Delivered & confirmed</span>
           </div>
-          <div className="h-64">
+          <div className="h-56 sm:h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={charts.monthlyTrends}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="month_label" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `₹${v / 1000}k`} />
+                <XAxis dataKey="month_label" tick={{ fontSize: 10 }} />
+                <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `₹${v / 1000}k`} />
                 <Tooltip
                   formatter={(val) => [formatCurrency(val), '']}
-                  contentStyle={{ backgroundColor: '#0f172a', color: '#fff', borderRadius: '8px' }}
+                  contentStyle={{ backgroundColor: '#0f172a', color: '#fff', borderRadius: '8px', fontSize: '11px' }}
                 />
-                <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
+                <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '4px' }} />
                 <Bar dataKey="sales" name="Sales" fill="#0f172a" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="gross_profit" name="Gross Profit" fill="#10b981" radius={[4, 4, 0, 0]} />
               </BarChart>
@@ -414,152 +415,108 @@ export const Dashboard = () => {
           </div>
         </div>
 
-        {/* 2. Cash Flow (Money In vs Money Out) */}
-        <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-4">
+        {/* Cash Flow Movement */}
+        <div className="p-4 sm:p-6 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-3 min-w-0 overflow-hidden">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-slate-900">Cash Flow (Central Ledger)</h3>
-            <span className="text-xs text-slate-400">Actual funds movement</span>
+            <span className="text-[11px] text-slate-400">Inflow vs Outflow</span>
           </div>
-          <div className="h-64">
+          <div className="h-56 sm:h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={charts.cashFlow}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="month_label" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `₹${v / 1000}k`} />
+                <XAxis dataKey="month_label" tick={{ fontSize: 10 }} />
+                <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `₹${v / 1000}k`} />
                 <Tooltip
                   formatter={(val) => [formatCurrency(val), '']}
-                  contentStyle={{ backgroundColor: '#0f172a', color: '#fff', borderRadius: '8px' }}
+                  contentStyle={{ backgroundColor: '#0f172a', color: '#fff', borderRadius: '8px', fontSize: '11px' }}
                 />
-                <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
-                <Bar dataKey="money_in" name="Money In (Inflow)" fill="#10b981" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="money_out" name="Money Out (Disbursed)" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '4px' }} />
+                <Bar dataKey="money_in" name="Money In" fill="#10b981" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="money_out" name="Money Out" fill="#ef4444" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* 3. Sales by Business Category */}
-        <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-900">Sales by Business Category</h3>
-            <Link to="/reports/categories" className="text-xs text-slate-500 hover:text-slate-900 font-semibold">
-              View All →
-            </Link>
-          </div>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={charts.salesByCategory?.slice(0, 6)} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-                <XAxis type="number" tickFormatter={(v) => `₹${v / 1000}k`} tick={{ fontSize: 11 }} />
-                <YAxis dataKey="category_name" type="category" width={110} tick={{ fontSize: 10 }} />
-                <Tooltip
-                  formatter={(val) => [formatCurrency(val), 'Sales']}
-                  contentStyle={{ backgroundColor: '#0f172a', color: '#fff', borderRadius: '8px' }}
-                />
-                <Bar dataKey="sales" fill="#334155" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* 4. Expenses by Category Donut */}
-        <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-900">Expenses Breakdown</h3>
-            <Link to="/expenses" className="text-xs text-slate-500 hover:text-slate-900 font-semibold">
-              Manage Expenses →
-            </Link>
-          </div>
-          <div className="h-64 flex items-center justify-center">
-            {charts.expensesByCategory?.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={charts.expensesByCategory}
-                    dataKey="amount"
-                    nameKey="category"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={55}
-                    outerRadius={80}
-                    paddingAngle={3}
-                  >
-                    {charts.expensesByCategory.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(val) => [formatCurrency(val), 'Amount']}
-                    contentStyle={{ backgroundColor: '#0f172a', color: '#fff', borderRadius: '8px' }}
-                  />
-                  <Legend wrapperStyle={{ fontSize: '10px' }} />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <span className="text-xs text-slate-400">No expenses recorded yet</span>
-            )}
           </div>
         </div>
       </section>
 
-      {/* Recent Cash & Business Activity (Requirement 46) */}
-      <section className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-800">
-            Recent Cash Activity
-          </h2>
-          <Link to="/money" className="text-xs font-bold text-slate-900 hover:text-slate-700 underline underline-offset-4">
-            View Complete Cash Ledger →
+      {/* 8. Recent Orders: Mobile Cards vs Desktop Table */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold text-slate-900">Recent Orders</h3>
+          <Link to="/orders" className="text-xs font-bold text-slate-900 hover:underline flex items-center gap-1">
+            <span>View All</span>
+            <ChevronRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
-        <div className="divide-y divide-slate-100">
-          {recentActivity?.map((act) => {
-            const isMoneyIn = act.transaction_type === 'MONEY_IN';
-            return (
-              <div key={act.id} className="py-3 flex items-center justify-between gap-4 text-xs">
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`p-2 rounded-lg shrink-0 ${
-                      isMoneyIn ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
-                    }`}
-                  >
-                    {isMoneyIn ? <ArrowDownLeft className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
-                  </div>
-                  <div>
-                    <p className="font-semibold text-slate-900">{act.description}</p>
-                    <span className="text-[10px] text-slate-400 font-medium">
-                      {formatDate(act.transaction_date)} • via {act.payment_method}
-                    </span>
-                  </div>
+        {/* Mobile Recent Orders (<640px) */}
+        <div className="sm:hidden space-y-2.5">
+          {recentActivity.orders.slice(0, 4).map((o) => (
+            <Link
+              key={o.id}
+              to={`/orders/${o.id}`}
+              className="block p-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-2 hover:bg-slate-50 transition-colors"
+            >
+              <div className="flex items-start justify-between">
+                <div>
+                  <span className="font-mono text-xs font-bold text-slate-900">{o.order_number}</span>
+                  <p className="text-xs font-bold text-slate-800">{o.customer_name}</p>
                 </div>
-
-                <div className="text-right shrink-0">
-                  <span
-                    className={`font-mono font-bold text-sm block ${
-                      isMoneyIn ? 'text-emerald-700' : 'text-slate-900'
-                    }`}
-                  >
-                    {isMoneyIn ? '+' : '-'}{formatCurrency(act.amount)}
-                  </span>
-                  <span className="text-[10px] uppercase font-bold text-slate-400">
-                    {act.source_type.replace(/_/g, ' ')}
-                  </span>
-                </div>
+                <StatusBadge status={o.status} />
               </div>
-            );
-          })}
+              <div className="flex items-center justify-between text-xs font-mono pt-1 border-t border-slate-100">
+                <span className="text-slate-500 font-sans font-medium">Value: <strong>{formatCurrency(o.total_amount)}</strong></span>
+                <span className="text-emerald-700 font-bold">Profit: {formatCurrency(o.gross_profit)}</span>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        {/* Desktop Recent Orders (>=640px) */}
+        <div className="hidden sm:block bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
+              <tr>
+                <th className="py-3 px-4">Order #</th>
+                <th className="py-3 px-4">Customer</th>
+                <th className="py-3 px-4 text-right">Value</th>
+                <th className="py-3 px-4 text-right">Profit</th>
+                <th className="py-3 px-4 text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 font-medium">
+              {recentActivity.orders.slice(0, 5).map((o) => (
+                <tr key={o.id} className="hover:bg-slate-50">
+                  <td className="py-3 px-4 font-mono font-bold text-slate-900">
+                    <Link to={`/orders/${o.id}`} className="hover:underline">
+                      {o.order_number}
+                    </Link>
+                  </td>
+                  <td className="py-3 px-4 font-semibold text-slate-900">{o.customer_name}</td>
+                  <td className="py-3 px-4 text-right font-mono font-bold">{formatCurrency(o.total_amount)}</td>
+                  <td className="py-3 px-4 text-right font-mono text-emerald-700 font-bold">{formatCurrency(o.gross_profit)}</td>
+                  <td className="py-3 px-4 text-center">
+                    <StatusBadge status={o.status} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </section>
 
-      {/* Create Order Modal */}
+      {/* Order Creation Modal */}
       <OrderFormModal
         isOpen={orderModalOpen}
         onClose={() => setOrderModalOpen(false)}
         onSuccess={() => {
+          showToast('Order created successfully!', 'success');
           fetchDashboard();
         }}
       />
     </div>
   );
 };
+
+export default Dashboard;

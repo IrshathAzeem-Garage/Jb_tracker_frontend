@@ -9,13 +9,16 @@ import {
   AlertCircle,
   Tag,
   DollarSign,
+  Calendar,
 } from 'lucide-react';
 import api from '../services/api';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { exportToCSV } from '../utils/exporter';
-import { Modal } from '../components/common/Modal';
+import { ResponsiveModal } from '../components/common/ResponsiveModal';
+import { ConfirmModal } from '../components/common/ConfirmModal';
 import { LoadingSkeleton } from '../components/common/LoadingSkeleton';
 import { EmptyState } from '../components/common/EmptyState';
+import { useToast } from '../context/ToastContext';
 
 const EXPENSE_CATEGORIES = [
   'Advertising',
@@ -33,6 +36,7 @@ const EXPENSE_CATEGORIES = [
 ];
 
 export const Expenses = () => {
+  const { showToast } = useToast();
   const [expenses, setExpenses] = useState([]);
   const [summary, setSummary] = useState({ thisMonth: 0, thisYear: 0, total: 0, topCategories: [] });
   const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 15, totalPages: 1 });
@@ -57,6 +61,9 @@ export const Expenses = () => {
   const [expNotes, setExpNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  // Delete Confirmation Modal (Prompt Requirement #43)
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, expense: null });
 
   const fetchExpenses = async (page = 1) => {
     setLoading(true);
@@ -114,30 +121,36 @@ export const Expenses = () => {
     setModalOpen(true);
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this expense? This will also remove the corresponding transaction from the central cash ledger.')) {
-      return;
-    }
+  const confirmDeleteExpense = async () => {
+    if (!deleteConfirm.expense) return;
     try {
-      const res = await api.delete(`/expenses/${id}`);
+      const res = await api.delete(`/expenses/${deleteConfirm.expense.id}`);
       if (res.success) {
+        showToast('Expense deleted and ledger debits reversed', 'info');
+        setDeleteConfirm({ open: false, expense: null });
         fetchExpenses(pagination.page);
       }
     } catch (err) {
-      alert(err.message || 'Failed to delete expense.');
+      showToast(err.message || 'Failed to delete expense', 'error');
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    setSubmitting(true);
 
+    const parsed = parseFloat(expAmount);
+    if (isNaN(parsed) || parsed <= 0) {
+      setError('Please enter a valid expense amount greater than zero.');
+      return;
+    }
+
+    setSubmitting(true);
     try {
       const payload = {
         category: expCategory,
         description: expDescription,
-        amount: parseFloat(expAmount),
+        amount: parsed,
         expense_date: expDate,
         payment_method: expMethod,
         receipt_reference: expRef || null,
@@ -146,8 +159,10 @@ export const Expenses = () => {
 
       if (editingId) {
         await api.put(`/expenses/${editingId}`, payload);
+        showToast('Expense updated successfully', 'success');
       } else {
         await api.post('/expenses', payload);
+        showToast('Expense recorded & deducted from central cash ledger', 'success');
       }
 
       setModalOpen(false);
@@ -170,360 +185,387 @@ export const Expenses = () => {
       { label: 'Receipt Reference', key: 'receipt_reference' },
     ];
     exportToCSV('business_expenses', headers, expenses);
+    showToast('Expenses exported to CSV', 'info');
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 pb-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
+          <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
             Operating Expenses
           </h2>
           <p className="text-xs text-slate-500 font-medium mt-0.5">
-            General business overheads (distinct from direct order procurement costs)
+            Day-to-day administrative & operational overheads
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={handleExportCSV}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 shadow-sm"
+            className="touch-target-44 flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 shadow-sm"
           >
             <Download className="w-3.5 h-3.5" />
-            Export CSV
+            <span>Export</span>
           </button>
           <button
             onClick={handleOpenAdd}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-slate-900 rounded-lg hover:bg-slate-800 shadow-sm"
+            className="touch-target-44 flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-slate-900 rounded-xl hover:bg-slate-800 shadow-sm"
           >
             <Plus className="w-4 h-4" />
-            Record Expense
+            <span>Add Expense</span>
           </button>
         </div>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-5 bg-white rounded-xl border border-slate-200 shadow-sm">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 font-mono">
+        <div className="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
+          <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-500 font-sans">
             Expenses This Month
           </span>
-          <span className="text-2xl font-bold font-mono text-slate-900 block mt-1">
+          <span className="text-xl sm:text-2xl font-black text-slate-900 block mt-0.5">
             {formatCurrency(summary.thisMonth)}
           </span>
-          <span className="text-[11px] text-slate-400 font-medium">Current calendar month</span>
+          <span className="text-[10px] text-slate-400 font-sans font-medium">Calendar month overheads</span>
         </div>
 
-        <div className="p-5 bg-white rounded-xl border border-slate-200 shadow-sm">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-            Expenses This Year
+        <div className="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
+          <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-500 font-sans">
+            Financial Year Total
           </span>
-          <span className="text-2xl font-bold font-mono text-slate-900 block mt-1">
+          <span className="text-xl sm:text-2xl font-black text-slate-900 block mt-0.5">
             {formatCurrency(summary.thisYear)}
           </span>
-          <span className="text-[11px] text-slate-400 font-medium">Current financial period</span>
+          <span className="text-[10px] text-slate-400 font-sans font-medium">Current financial year</span>
         </div>
 
-        <div className="p-5 bg-white rounded-xl border border-slate-200 shadow-sm">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-            Total All-Time Overhead
+        <div className="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
+          <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-500 font-sans">
+            All-Time Overheads
           </span>
-          <span className="text-2xl font-bold font-mono text-rose-700 block mt-1">
+          <span className="text-xl sm:text-2xl font-black text-slate-900 block mt-0.5">
             {formatCurrency(summary.total)}
           </span>
-          <span className="text-[11px] text-slate-400 font-medium">Deducted from gross profit</span>
+          <span className="text-[10px] text-slate-400 font-sans font-medium">Cumulative business expenses</span>
         </div>
       </div>
 
-      {/* Filter toolbar */}
-      <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm grid grid-cols-1 sm:grid-cols-4 gap-3">
-        <div className="relative">
-          <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search description, number, ref..."
-            className="w-full pl-9 pr-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:outline-none"
-          />
-        </div>
+      {/* Search and Filters */}
+      <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          <div className="relative">
+            <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search description, reference..."
+              className="w-full min-h-[44px] pl-10 pr-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-slate-900 focus:outline-none"
+            />
+          </div>
 
-        <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:outline-none font-medium"
-        >
-          <option value="">All Categories</option>
-          {EXPENSE_CATEGORIES.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="w-full min-h-[44px] px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-slate-900 focus:outline-none font-medium bg-white"
+          >
+            <option value="">All Categories</option>
+            {EXPENSE_CATEGORIES.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
 
-        <select
-          value={paymentMethod}
-          onChange={(e) => setPaymentMethod(e.target.value)}
-          className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:outline-none font-medium"
-        >
-          <option value="">All Payment Methods</option>
-          <option value="BANK_TRANSFER">Bank Transfer</option>
-          <option value="UPI">UPI</option>
-          <option value="CARD">Card</option>
-          <option value="CASH">Cash</option>
-          <option value="OTHER">Other</option>
-        </select>
-
-        <div className="flex gap-2">
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="w-1/2 px-2 py-2 text-[11px] border border-slate-300 rounded-lg"
-            title="From date"
-          />
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="w-1/2 px-2 py-2 text-[11px] border border-slate-300 rounded-lg"
-            title="To date"
-          />
+          <select
+            value={paymentMethod}
+            onChange={(e) => setPaymentMethod(e.target.value)}
+            className="w-full min-h-[44px] px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-slate-900 focus:outline-none font-medium bg-white"
+          >
+            <option value="">All Payment Modes</option>
+            <option value="BANK_TRANSFER">Bank Transfer</option>
+            <option value="UPI">UPI</option>
+            <option value="CASH">Cash</option>
+            <option value="CARD">Card</option>
+          </select>
         </div>
       </div>
 
-      {/* Table */}
+      {/* Expense Content: Mobile Cards (<640px) vs Desktop Table (>=640px) */}
       {loading ? (
-        <LoadingSkeleton rows={5} cols={5} />
+        <LoadingSkeleton rows={6} cols={4} />
       ) : expenses.length === 0 ? (
         <EmptyState
-          title="No expenses found"
-          description="Track administrative overheads, advertising, software, travel, or courier expenses."
-          actionLabel="Record Expense"
+          title="No expenses recorded"
+          description="Click 'Add Expense' to record administrative or operational overheads."
+          actionLabel="Add Expense"
           onAction={handleOpenAdd}
         />
       ) : (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
-                <tr>
-                  <th className="py-3.5 px-4">Expense #</th>
-                  <th className="py-3.5 px-4">Date</th>
-                  <th className="py-3.5 px-4">Category</th>
-                  <th className="py-3.5 px-4">Description</th>
-                  <th className="py-3.5 px-4">Method / Ref</th>
-                  <th className="py-3.5 px-4 text-right">Amount</th>
-                  <th className="py-3.5 px-4 text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-medium">
-                {expenses.map((e) => (
-                  <tr key={e.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-3.5 px-4 font-mono font-bold text-slate-500">
-                      {e.expense_number}
-                    </td>
-
-                    <td className="py-3.5 px-4 text-slate-600 font-mono">
-                      {formatDate(e.expense_date)}
-                    </td>
-
-                    <td className="py-3.5 px-4">
-                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-800">
-                        <Tag className="w-2.5 h-2.5 text-slate-500" />
-                        {e.category}
+        <>
+          {/* Mobile Expense Cards (<640px) */}
+          <div className="sm:hidden space-y-2.5">
+            {expenses.map((exp) => (
+              <div
+                key={exp.id}
+                className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-2"
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700">
+                        {exp.category}
                       </span>
-                    </td>
+                      <span className="font-mono text-[10px] text-slate-400">
+                        {exp.expense_number}
+                      </span>
+                    </div>
+                    <h4 className="text-xs font-bold text-slate-900 mt-1">
+                      {exp.description}
+                    </h4>
+                  </div>
+                  <span className="font-mono text-sm font-black text-slate-900">
+                    {formatCurrency(exp.amount)}
+                  </span>
+                </div>
 
-                    <td className="py-3.5 px-4 font-bold text-slate-900">
-                      {e.description}
-                      {e.notes && (
-                        <span className="block text-[10px] font-normal text-slate-400 mt-0.5">
-                          {e.notes}
-                        </span>
-                      )}
-                    </td>
-
-                    <td className="py-3.5 px-4 text-slate-600">
-                      <span className="block font-semibold">{e.payment_method}</span>
-                      {e.receipt_reference && (
-                        <span className="text-[10px] text-slate-400 font-mono">
-                          Ref: {e.receipt_reference}
-                        </span>
-                      )}
-                    </td>
-
-                    <td className="py-3.5 px-4 text-right font-mono font-bold text-sm text-slate-900">
-                      {formatCurrency(e.amount)}
-                    </td>
-
-                    <td className="py-3.5 px-4 text-center">
-                      <div className="flex items-center justify-center gap-1">
-                        <button
-                          onClick={() => handleOpenEdit(e)}
-                          className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-colors"
-                          title="Edit Expense"
-                        >
-                          <Edit className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(e.id)}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors"
-                          title="Delete Expense"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono pt-1 border-t border-slate-100">
+                  <span>{formatDate(exp.expense_date)} • {exp.payment_method}</span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenEdit(exp)}
+                      className="touch-target-44 p-1.5 text-slate-600 hover:text-slate-900"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDeleteConfirm({ open: true, expense: exp })}
+                      className="touch-target-44 p-1.5 text-rose-500 hover:text-rose-700"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
+
+          {/* Desktop Table (>=640px) */}
+          <div className="hidden sm:block bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
+                  <tr>
+                    <th className="py-3.5 px-4">Expense #</th>
+                    <th className="py-3.5 px-4">Date</th>
+                    <th className="py-3.5 px-4">Category</th>
+                    <th className="py-3.5 px-4">Description</th>
+                    <th className="py-3.5 px-4">Mode</th>
+                    <th className="py-3.5 px-4 text-right">Amount (₹)</th>
+                    <th className="py-3.5 px-4 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-medium">
+                  {expenses.map((exp) => (
+                    <tr key={exp.id} className="hover:bg-slate-50/80">
+                      <td className="py-3.5 px-4 font-mono font-bold text-slate-700">
+                        {exp.expense_number}
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-500">
+                        {formatDate(exp.expense_date)}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                          {exp.category}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-900 max-w-xs truncate">
+                        {exp.description}
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-500 font-mono text-[11px]">
+                        {exp.payment_method}
+                      </td>
+                      <td className="py-3.5 px-4 text-right font-mono font-bold text-slate-900">
+                        {formatCurrency(exp.amount)}
+                      </td>
+                      <td className="py-3.5 px-4 text-center">
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            onClick={() => handleOpenEdit(exp)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirm({ open: true, expense: exp })}
+                            className="p-1.5 rounded-lg text-rose-500 hover:text-rose-700 hover:bg-rose-50"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       )}
 
-      {/* Add / Edit Expense Modal */}
-      <Modal
+      {/* Expense Modal (ResponsiveModal: BottomSheet on mobile, modal on desktop) */}
+      <ResponsiveModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={editingId ? 'Edit Business Expense' : 'Record Operating Expense'}
-        subtitle="Automatically records a money-out entry in central cash ledger"
+        title={editingId ? 'Edit Expense Record' : 'Record Operating Expense'}
+        subtitle="Recorded expenses immediately debit liquid cash and deduct from Net Profit"
+        maxWidth="max-w-md"
       >
         {error && (
-          <div className="mb-4 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-center gap-2">
+          <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
-            {error}
+            <span>{error}</span>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Expense Category *
-              </label>
-              <select
-                value={expCategory}
-                onChange={(e) => setExpCategory(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:outline-none"
-              >
-                {EXPENSE_CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              Expense Category *
+            </label>
+            <select
+              value={expCategory}
+              onChange={(e) => setExpCategory(e.target.value)}
+              className="w-full min-h-[44px] px-3.5 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-slate-900 focus:outline-none"
+            >
+              {EXPENSE_CATEGORIES.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700">
                 Amount (₹) *
               </label>
+              {parseFloat(expAmount || 0) > 0 && (
+                <span className="text-xs font-mono font-bold text-slate-900">
+                  Formatted: {formatCurrency(expAmount)}
+                </span>
+              )}
+            </div>
+            <div className="relative">
+              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 font-bold text-base pointer-events-none">
+                ₹
+              </span>
               <input
                 type="number"
+                inputMode="decimal"
                 step="0.01"
                 min="0.01"
-                required
                 value={expAmount}
                 onChange={(e) => setExpAmount(e.target.value)}
-                placeholder="0.00"
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:outline-none font-mono font-bold"
+                required
+                placeholder="2500"
+                className="w-full min-h-[44px] pl-8 pr-4 py-2.5 text-base border border-slate-300 rounded-xl focus:ring-2 focus:ring-slate-900 focus:outline-none font-mono font-bold"
               />
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Description *
-            </label>
-            <input
-              type="text"
-              required
-              value={expDescription}
-              onChange={(e) => setExpDescription(e.target.value)}
-              placeholder="e.g. Google Cloud & Workspace monthly plan"
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:outline-none"
-            />
-          </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                 Expense Date *
               </label>
               <input
                 type="date"
-                required
                 value={expDate}
                 onChange={(e) => setExpDate(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:outline-none"
+                required
+                className="w-full min-h-[44px] px-3.5 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-slate-900 focus:outline-none"
               />
             </div>
-
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                 Payment Method *
               </label>
               <select
                 value={expMethod}
                 onChange={(e) => setExpMethod(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:outline-none font-medium"
+                className="w-full min-h-[44px] px-3.5 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-slate-900 focus:outline-none"
               >
                 <option value="BANK_TRANSFER">Bank Transfer (NEFT/RTGS)</option>
                 <option value="UPI">UPI</option>
-                <option value="CARD">Company Card</option>
-                <option value="CASH">Petty Cash</option>
-                <option value="OTHER">Other</option>
+                <option value="CASH">Cash</option>
+                <option value="CARD">Card</option>
               </select>
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Receipt Reference / Invoice Number
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              Description *
+            </label>
+            <input
+              type="text"
+              value={expDescription}
+              onChange={(e) => setExpDescription(e.target.value)}
+              required
+              placeholder="e.g. Google Workspace monthly subscription"
+              className="w-full min-h-[44px] px-3.5 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-slate-900 focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              Receipt / Invoice Reference
             </label>
             <input
               type="text"
               value={expRef}
               onChange={(e) => setExpRef(e.target.value)}
-              placeholder="e.g. INV-GSUITE-2026-09"
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:outline-none font-mono text-xs"
+              placeholder="e.g. INV-2026-9921"
+              className="w-full min-h-[44px] px-3.5 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-slate-900 focus:outline-none font-mono text-xs"
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Notes / Tax Breakdown
-            </label>
-            <textarea
-              rows="2"
-              value={expNotes}
-              onChange={(e) => setExpNotes(e.target.value)}
-              placeholder="Additional internal audit notes..."
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:outline-none"
-            />
-          </div>
-
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+          <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={() => setModalOpen(false)}
-              className="px-4 py-2 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50"
+              className="min-h-[44px] px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold text-slate-700"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="px-5 py-2 text-sm font-bold text-white bg-slate-900 rounded-lg hover:bg-slate-800 disabled:opacity-50"
+              className="min-h-[44px] flex-1 sm:flex-none px-6 py-2.5 rounded-xl bg-slate-900 text-sm font-bold text-white hover:bg-slate-800 disabled:opacity-60"
             >
               {submitting ? 'Saving...' : editingId ? 'Update Expense' : 'Save Expense'}
             </button>
           </div>
         </form>
-      </Modal>
+      </ResponsiveModal>
+
+      {/* Financial Safety Confirm Delete Dialog (Prompt Requirement #43) */}
+      <ConfirmModal
+        isOpen={deleteConfirm.open}
+        title="Delete Expense Record?"
+        message={
+          deleteConfirm.expense
+            ? `Are you sure you want to delete ${deleteConfirm.expense.expense_number} (${formatCurrency(deleteConfirm.expense.amount)} - ${deleteConfirm.expense.category})? This will reverse the disbursement in the central cash ledger.`
+            : ''
+        }
+        confirmLabel="Confirm & Delete"
+        onConfirm={confirmDeleteExpense}
+        onClose={() => setDeleteConfirm({ open: false, expense: null })}
+      />
     </div>
   );
 };
+
+export default Expenses;
