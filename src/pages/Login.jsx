@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Lock, Mail, ArrowRight, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { Lock, Mail, ArrowRight, AlertCircle, Eye, EyeOff, RefreshCw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useBackendHealth } from '../hooks/useBackendHealth';
 
 export const Login = () => {
   const [email, setEmail] = useState('');
@@ -9,19 +10,37 @@ export const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isColdStartError, setIsColdStartError] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  // Lightweight wake-up check for Render Free tier cold start
+  const { backendStatus, isChecking, isReady, isUnavailable } = useBackendHealth();
 
   const handleLogin = async (e) => {
     if (e) e.preventDefault();
     setError('');
+    setIsColdStartError(false);
     setLoading(true);
 
     try {
       await login(email, password);
       navigate('/');
     } catch (err) {
-      setError(err.message || 'Invalid credentials. Please verify your email and password.');
+      if (err.status === 401) {
+        setError('Invalid credentials. Please verify your email and password.');
+      } else if (
+        err.isNetworkError ||
+        err.code === 'ECONNABORTED' ||
+        err.message?.includes('timeout') ||
+        [502, 503, 504].includes(err.status)
+      ) {
+        // Cold start timeout or server spinning up
+        setIsColdStartError(true);
+        setError('Server is starting up. Please try again in a few seconds.');
+      } else {
+        setError(err.message || 'Unable to connect to server. Please check your internet connection.');
+      }
     } finally {
       setLoading(false);
     }
@@ -47,14 +66,48 @@ export const Login = () => {
         <p className="mt-1.5 text-xs text-slate-400 max-w-xs mx-auto">
           Internal business management & financial tracking system
         </p>
+
+        {/* Server Connection Status (Subtle & Non-blocking) */}
+        <div className="flex items-center justify-center gap-1.5 mt-3 text-[11px] font-medium text-slate-400">
+          {isChecking && (
+            <>
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+              <span>Connecting to server...</span>
+            </>
+          )}
+          {isReady && (
+            <>
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              <span className="text-emerald-400/90 font-semibold">Connected</span>
+            </>
+          )}
+          {isUnavailable && (
+            <>
+              <span className="w-2 h-2 rounded-full bg-slate-500" />
+              <span>Server unavailable (you can still try signing in)</span>
+            </>
+          )}
+        </div>
       </div>
 
-      <div className="mt-6 sm:mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
+      <div className="mt-5 sm:mt-6 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
         <div className="bg-slate-950/80 backdrop-blur-md py-7 px-5 shadow-2xl rounded-2xl border border-slate-800 sm:px-10">
           {error && (
-            <div className="mb-5 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-medium flex items-center gap-2.5">
-              <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
-              <span>{error}</span>
+            <div className="mb-5 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-medium flex items-center justify-between gap-2.5">
+              <div className="flex items-center gap-2 min-w-0">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                <span className="truncate">{error}</span>
+              </div>
+              {isColdStartError && (
+                <button
+                  type="button"
+                  onClick={() => handleLogin()}
+                  className="px-2.5 py-1 bg-white text-slate-950 rounded-lg font-bold text-[11px] hover:bg-slate-100 flex items-center gap-1 shrink-0 shadow-sm"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  Retry
+                </button>
+              )}
             </div>
           )}
 

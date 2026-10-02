@@ -4,8 +4,13 @@ import axios from 'axios';
 // Priority 2: In production if not provided, fallback to relative '/api'
 // Priority 3: Local development fallback 'http://localhost:5000/api'
 const getBaseUrl = () => {
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
+  let url = import.meta.env.VITE_API_URL;
+  if (url) {
+    url = url.trim().replace(/\/+$/, '');
+    if (!url.endsWith('/api')) {
+      url = `${url}/api`;
+    }
+    return url;
   }
   if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
     return 'https://jb-tracker-backend.onrender.com/api';
@@ -15,6 +20,7 @@ const getBaseUrl = () => {
 
 const api = axios.create({
   baseURL: getBaseUrl(),
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -43,7 +49,13 @@ api.interceptors.response.use(
         window.location.href = '/login';
       }
     }
-    return Promise.reject(error.response?.data || { message: error.message });
+    
+    // Enrich rejected error with status and cold-start detection info
+    const enrichedError = error.response?.data || { message: error.message };
+    enrichedError.status = error.response?.status;
+    enrichedError.code = error.code;
+    enrichedError.isNetworkError = !error.response;
+    return Promise.reject(enrichedError);
   }
 );
 

@@ -7,6 +7,7 @@ import { DashboardLayout } from './layouts/DashboardLayout';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { useBackendHealth } from './hooks/useBackendHealth';
 
 // Lazy-loaded pages for mobile performance optimization
 const Orders = lazy(() => import('./pages/Orders').then(m => ({ default: m.Orders })));
@@ -73,10 +74,16 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+const BackendWarmup = () => {
+  useBackendHealth();
+  return null;
+};
+
 export function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
+        <BackendWarmup />
         <AuthProvider>
           <ToastProvider>
             <BrowserRouter>
