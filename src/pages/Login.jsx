@@ -26,17 +26,6 @@ export const Login = () => {
     }
   };
 
-  const handleQuickLogin = (quickEmail, quickPassword) => {
-    setEmail(quickEmail);
-    setPassword(quickPassword);
-    setError('');
-    setLoading(true);
-    login(quickEmail, quickPassword)
-      .then(() => navigate('/'))
-      .catch((err) => setError(err.message || 'Login failed.'))
-      .finally(() => setLoading(false));
-  };
-
   return (
     <div className="min-h-screen bg-slate-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
       {/* Background geometric accents */}
@@ -80,7 +69,7 @@ export const Login = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  placeholder="admin@justbusinessthings.com"
+                  placeholder="name@company.com"
                   className="w-full pl-9 pr-3 py-2.5 text-sm bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition-colors"
                 />
               </div>
@@ -120,39 +109,6 @@ export const Login = () => {
               )}
             </button>
           </form>
-
-          {/* Quick Demo Logins for Pair Programming / Review */}
-          <div className="mt-6 pt-6 border-t border-slate-800">
-            <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-3 text-center">
-              Quick Demo Access
-            </span>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('admin@justbusinessthings.com', 'Admin@12345')}
-                className="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-[11px] font-semibold text-slate-200 transition-colors text-center"
-              >
-                Admin
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('manager@justbusinessthings.com', 'Manager@12345')}
-                className="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-[11px] font-semibold text-slate-200 transition-colors text-center"
-              >
-                Manager
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('staff@justbusinessthings.com', 'Staff@12345')}
-                className="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-[11px] font-semibold text-slate-200 transition-colors text-center"
-              >
-                Staff
-              </button>
-            </div>
-            <p className="mt-3 text-[10px] text-center text-slate-400">
-              Pass: <code className="text-slate-300">Admin@12345</code> | Role-based permissions enforced
-            </p>
-          </div>
         </div>
       </div>
     </div>
