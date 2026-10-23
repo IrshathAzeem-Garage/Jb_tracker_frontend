@@ -17,6 +17,7 @@ const routeTitles = {
   '/expenses': { title: 'Operating Expenses', subtitle: 'Day-to-day administrative & operational overheads' },
   '/partners': { title: 'Partners & Capital', subtitle: 'Partner equity investments, profit shares & capital accounts' },
   '/reports': { title: 'Financial Reports', subtitle: 'P&L, Cash Flow, Customer/Supplier performance analysis' },
+  '/notes': { title: 'Business Notes', subtitle: 'Organize, pin, and track strategic notes, meeting minutes, and reminders' },
   '/settings': { title: 'Settings & Administration', subtitle: 'Company configuration, team accounts & audit log' },
 };
 

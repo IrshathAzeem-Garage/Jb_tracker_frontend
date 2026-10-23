@@ -21,6 +21,7 @@ const Money = lazy(() => import('./pages/Money').then(m => ({ default: m.Money }
 const Expenses = lazy(() => import('./pages/Expenses').then(m => ({ default: m.Expenses })));
 const Partners = lazy(() => import('./pages/Partners').then(m => ({ default: m.Partners })));
 const Reports = lazy(() => import('./pages/Reports').then(m => ({ default: m.Reports })));
+const Notes = lazy(() => import('./pages/Notes').then(m => ({ default: m.Notes })));
 const Settings = lazy(() => import('./pages/Settings').then(m => ({ default: m.Settings })));
 const NotFound = lazy(() => import('./pages/NotFound').then(m => ({ default: m.NotFound })));
 
@@ -114,6 +115,7 @@ export function App() {
                 <Route path="partners" element={<RouteSuspense><Partners /></RouteSuspense>} />
                 <Route path="reports" element={<RouteSuspense><Reports /></RouteSuspense>} />
                 <Route path="reports/:reportType" element={<RouteSuspense><Reports /></RouteSuspense>} />
+                <Route path="notes" element={<RouteSuspense><Notes /></RouteSuspense>} />
                 <Route path="settings" element={<RouteSuspense><Settings /></RouteSuspense>} />
               </Route>
 

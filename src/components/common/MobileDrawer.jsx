@@ -10,6 +10,7 @@ import {
   Receipt,
   Briefcase,
   BarChart3,
+  StickyNote,
   Settings,
   LogOut,
   X,
@@ -28,6 +29,7 @@ const navigation = [
   { name: 'Expenses', href: '/expenses', icon: Receipt },
   { name: 'Partners', href: '/partners', icon: Briefcase },
   { name: 'Reports', href: '/reports', icon: BarChart3 },
+  { name: 'Notes', href: '/notes', icon: StickyNote },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 

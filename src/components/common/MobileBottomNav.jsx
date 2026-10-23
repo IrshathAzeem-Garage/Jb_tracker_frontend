@@ -24,6 +24,7 @@ export const MobileBottomNav = ({ onOpenMore }) => {
     '/products',
     '/expenses',
     '/partners',
+    '/notes',
     '/settings',
   ].some((path) => location.pathname.startsWith(path));
 
