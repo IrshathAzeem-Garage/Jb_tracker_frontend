@@ -34,7 +34,7 @@ export const exportToCSV = (filename, headers, rows) => {
 
 export const exportToPDF = ({
   title = 'Report',
-  subtitle = 'Just Business Things — JB Tracker',
+  subtitle = 'Freakz Apparel Hub — Freakz Tracker',
   headers = [],
   rows = [],
   summary = null,
@@ -50,7 +50,7 @@ export const exportToPDF = ({
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
   doc.setTextColor(15, 23, 42); // slate-900
-  doc.text('JUST BUSINESS THINGS', 14, 18);
+  doc.text('FREAKZ APPAREL HUB', 14, 18);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(12);

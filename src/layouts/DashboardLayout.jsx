@@ -36,7 +36,7 @@ export const DashboardLayout = () => {
     } else if (currentPath.startsWith('/suppliers/')) {
       pageInfo = { title: 'Supplier Profile', subtitle: 'Supplier statement, procurement history & disbursements' };
     } else {
-      pageInfo = { title: 'JB Tracker', subtitle: 'Just Business Things' };
+      pageInfo = { title: 'Freakz Tracker', subtitle: 'Freakz Apparel Hub' };
     }
   }
 

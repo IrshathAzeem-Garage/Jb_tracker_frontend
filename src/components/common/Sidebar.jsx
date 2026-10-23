@@ -53,16 +53,16 @@ export const Sidebar = ({ mobileOpen, setMobileOpen }) => {
         {/* Brand Header */}
         <div className="flex items-center gap-3 px-6 h-16 border-b border-slate-800">
           <img
-            src="/logo.png"
-            alt="JBT Logo"
-            className="w-10 h-10 rounded-xl object-contain bg-black shadow-md border border-slate-800 shrink-0"
+            src="/dark_logo.png"
+            alt="Freakz Logo"
+            className="w-10 h-10 rounded-xl object-contain shadow-md border border-slate-800 shrink-0"
           />
           <div className="flex flex-col">
             <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">
-              Just Business Things
+              Freakz Apparel Hub
             </span>
             <span className="text-base font-bold text-white tracking-tight">
-              JB Tracker
+              Freakz Tracker
             </span>
           </div>
         </div>
@@ -99,7 +99,7 @@ export const Sidebar = ({ mobileOpen, setMobileOpen }) => {
           <div className="flex items-center justify-between p-2 rounded-lg bg-slate-800/50">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-700 text-slate-200 font-semibold text-xs shrink-0">
-                {user?.name ? user.name.slice(0, 2).toUpperCase() : 'JB'}
+                {user?.name ? user.name.slice(0, 2).toUpperCase() : 'FT'}
               </div>
               <div className="flex flex-col min-w-0">
                 <p className="text-xs font-semibold text-white truncate">

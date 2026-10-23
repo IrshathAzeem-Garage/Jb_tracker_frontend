@@ -1,16 +1,13 @@
-// JB Tracker - Progressive Web App Service Worker
+// Freakz Tracker - Progressive Web App Service Worker
 // Strictly avoids caching financial API calls (/api/*) to safeguard sensitive business data
 
-const CACHE_NAME = 'jb-tracker-static-v2';
+const CACHE_NAME = 'freakz-tracker-static-v1';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.webmanifest',
-  '/logo.png',
-  '/icon-192.png',
-  '/icon-512.png',
-  '/apple-touch-icon.png',
-  '/favicon.png',
+  '/dark_logo.png',
+  '/light_logo.png',
 ];
 
 self.addEventListener('install', (event) => {

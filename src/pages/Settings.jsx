@@ -42,8 +42,8 @@ export const Settings = () => {
           return {
             success: true,
             data: {
-              company_name: 'Just Business Things',
-              business_name: 'Just Business Things',
+              company_name: 'Freakz Apparel Hub',
+              business_name: 'Freakz Apparel Hub',
               currency: 'INR',
               timezone: 'Asia/Kolkata',
               financial_year_start: '04-01',
@@ -417,7 +417,7 @@ export const Settings = () => {
         isOpen={userModalOpen}
         onClose={() => setUserModalOpen(false)}
         title="Create Team Member Account"
-        subtitle="Grant role-based access to Just Business Things team"
+        subtitle="Grant role-based access to Freakz Apparel Hub team"
       >
         <form onSubmit={handleCreateUser} className="space-y-3.5">
           <div>

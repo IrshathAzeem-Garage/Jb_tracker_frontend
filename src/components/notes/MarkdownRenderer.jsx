@@ -3,7 +3,7 @@ import { CheckSquare, Square } from 'lucide-react';
 
 /**
  * Lightweight, safe, and zero-dependency Markdown & Checklist renderer
- * Styled precisely for JB Tracker's executive Tailwind palette.
+ * Styled precisely for Freakz Tracker's executive Tailwind palette.
  */
 export const MarkdownRenderer = ({ content = '', onToggleChecklist, readOnly = true }) => {
   if (!content || !content.trim()) {

@@ -23,16 +23,16 @@ export const MobileHeader = ({ onMenuClick, title, subtitle }) => {
         <div className="flex flex-col items-center justify-center text-center">
           <div className="flex items-center gap-1.5">
             <img
-              src="/logo.png"
-              alt="JBT"
-              className="w-5 h-5 rounded-md object-contain bg-black shadow-xs shrink-0"
+              src="/light_logo.png"
+              alt="Freakz Logo"
+              className="w-5 h-5 rounded-md object-contain shrink-0"
             />
             <span className="font-extrabold text-sm text-slate-900 tracking-tight">
-              JB Tracker
+              Freakz Tracker
             </span>
           </div>
           <span className="text-[10px] text-slate-500 font-semibold tracking-wide uppercase">
-            {title || 'Just Business Things'}
+            {title || 'Freakz Apparel Hub'}
           </span>
         </div>
 

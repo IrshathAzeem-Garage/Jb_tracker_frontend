@@ -53,15 +53,15 @@ export const Login = () => {
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10 text-center">
         <img
-          src="/logo.png"
-          alt="Just Business Things"
-          className="inline-block w-16 h-16 rounded-2xl object-contain bg-black shadow-2xl border border-slate-800 mb-3"
+          src="/dark_logo.png"
+          alt="Freakz Apparel Hub"
+          className="inline-block w-16 h-16 rounded-2xl object-contain shadow-2xl border border-slate-800 mb-3"
         />
         <h2 className="text-xs font-bold tracking-widest text-slate-400 uppercase">
-          Just Business Things
+          Freakz Apparel Hub
         </h2>
         <h1 className="mt-1 text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-          JB Tracker
+          Freakz Tracker
         </h1>
         <p className="mt-1.5 text-xs text-slate-400 max-w-xs mx-auto">
           Internal business management & financial tracking system
@@ -170,7 +170,7 @@ export const Login = () => {
                 'Signing In...'
               ) : (
                 <>
-                  <span>Sign In to JB Tracker</span>
+                  <span>Sign In to Freakz Tracker</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}

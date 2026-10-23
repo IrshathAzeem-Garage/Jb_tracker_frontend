@@ -61,7 +61,7 @@ const ProtectedRoute = ({ children }) => {
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 border-4 border-slate-700 border-t-white rounded-full animate-spin" />
           <span className="text-xs font-bold uppercase tracking-widest text-slate-400">
-            JB Tracker
+            Freakz Tracker
           </span>
         </div>
       </div>

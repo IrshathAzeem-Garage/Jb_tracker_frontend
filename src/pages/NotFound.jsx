@@ -12,7 +12,7 @@ export const NotFound = () => {
         404 — Page Not Found
       </h1>
       <p className="mt-2 text-sm text-slate-500 max-w-sm">
-        The page or resource you requested does not exist or has been relocated in JB Tracker.
+        The page or resource you requested does not exist or has been relocated in Freakz Tracker.
       </p>
       <Link
         to="/"

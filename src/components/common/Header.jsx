@@ -16,7 +16,7 @@ export const Header = ({ onMenuClick, title, subtitle }) => {
         </button>
         <div>
           <h1 className="text-lg font-bold text-slate-900 tracking-tight leading-snug">
-            {title || 'JB Tracker'}
+            {title || 'Freakz Tracker'}
           </h1>
           {subtitle && (
             <p className="text-xs text-slate-500 font-medium">

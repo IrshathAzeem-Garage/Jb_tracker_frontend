@@ -38,7 +38,7 @@ export class ErrorBoundary extends React.Component {
                 Something went wrong
               </h2>
               <p className="text-xs text-slate-400">
-                JB Tracker encountered an unexpected error. Your financial data is completely safe.
+                Freakz Tracker encountered an unexpected error. Your financial data is completely safe.
               </p>
             </div>
 

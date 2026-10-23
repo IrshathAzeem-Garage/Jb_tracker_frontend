@@ -74,16 +74,16 @@ export const MobileDrawer = ({ isOpen, onClose }) => {
         <div className="flex items-center justify-between px-5 h-16 border-b border-slate-800">
           <div className="flex items-center gap-3">
             <img
-              src="/logo.png"
-              alt="JBT Logo"
-              className="w-9 h-9 rounded-xl object-contain bg-black shadow-md border border-slate-800 shrink-0"
+              src="/dark_logo.png"
+              alt="Freakz Logo"
+              className="w-9 h-9 rounded-xl object-contain shadow-md border border-slate-800 shrink-0"
             />
             <div>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
-                Just Business Things
+                Freakz Apparel Hub
               </p>
               <h2 className="text-base font-extrabold text-white tracking-tight">
-                JB Tracker
+                Freakz Tracker
               </h2>
             </div>
           </div>
@@ -128,7 +128,7 @@ export const MobileDrawer = ({ isOpen, onClose }) => {
           <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-800/60 border border-slate-800">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-700 text-slate-100 font-bold text-xs shrink-0">
-                {user?.name ? user.name.slice(0, 2).toUpperCase() : 'JB'}
+                {user?.name ? user.name.slice(0, 2).toUpperCase() : 'FT'}
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="text-xs font-semibold text-white truncate">
