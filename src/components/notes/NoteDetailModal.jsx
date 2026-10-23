@@ -13,6 +13,7 @@ import {
   Tag,
   AlertCircle,
   FileText,
+  User,
 } from 'lucide-react';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { formatDateTime, formatRelativeTime } from '../../utils/formatters';
@@ -187,6 +188,17 @@ export const NoteDetailModal = ({
 
               {/* Metadata row */}
               <div className="flex items-center gap-4 text-xs text-slate-500 mt-2 flex-wrap">
+                {note.author_name && (
+                  <span className="flex items-center gap-1 font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                    <User className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Created by: {note.author_name}</span>
+                    {note.author_role && (
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider ml-0.5">
+                        • {note.author_role}
+                      </span>
+                    )}
+                  </span>
+                )}
                 <span className="flex items-center gap-1">
                   <Calendar className="w-3.5 h-3.5 text-slate-400" />
                   Created: {formatDateTime(note.created_at)}

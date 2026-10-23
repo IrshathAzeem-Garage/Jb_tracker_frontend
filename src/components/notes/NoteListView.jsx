@@ -79,9 +79,16 @@ export const NoteListView = ({
                   {/* Title & Preview */}
                   <td className="py-3 px-4">
                     <div className="flex flex-col min-w-0 max-w-md">
-                      <span className="font-semibold text-slate-900 truncate">
-                        {note.title}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-slate-900 truncate">
+                          {note.title}
+                        </span>
+                        {note.author_name && (
+                          <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">
+                            by {note.author_name}
+                          </span>
+                        )}
+                      </div>
                       <span className="text-xs text-slate-500 truncate mt-0.5">
                         {note.content.substring(0, 90)}
                       </span>

@@ -11,6 +11,8 @@ export const noteService = {
     if (params.isPinned !== undefined && params.isPinned !== '') query.append('isPinned', params.isPinned);
     if (params.isArchived !== undefined && params.isArchived !== '') query.append('isArchived', params.isArchived);
     if (params.sortBy) query.append('sortBy', params.sortBy);
+    if (params.onlyMine) query.append('onlyMine', params.onlyMine);
+    if (params.authorId) query.append('authorId', params.authorId);
 
     const queryString = query.toString();
     const url = queryString ? `/notes?${queryString}` : '/notes';

@@ -10,6 +10,7 @@ import {
   Calendar,
   Tag,
   AlertCircle,
+  User,
 } from 'lucide-react';
 import { formatRelativeTime, formatDateTime } from '../../utils/formatters';
 import { CATEGORY_STYLES, PRIORITY_STYLES } from './noteConstants';
@@ -186,9 +187,17 @@ export const NoteCard = ({
 
       {/* Card footer */}
       <div className="px-4 py-2.5 sm:px-5 bg-slate-50/70 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-        <span className="text-[11px] font-medium text-slate-400">
-          Updated {formatRelativeTime(note.updated_at)}
-        </span>
+        <div className="flex flex-col min-w-0 pr-2">
+          <span className="text-[11px] font-medium text-slate-400">
+            Updated {formatRelativeTime(note.updated_at)}
+          </span>
+          {note.author_name && (
+            <span className="text-[10px] text-slate-500 font-medium truncate flex items-center gap-1 mt-0.5" title={`Created by ${note.author_name}`}>
+              <User className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+              <span>{note.author_name}</span>
+            </span>
+          )}
+        </div>
 
         {/* Quick action buttons */}
         <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>

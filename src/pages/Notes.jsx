@@ -51,6 +51,7 @@ export const Notes = () => {
   const [category, setCategory] = useState('All');
   const [priority, setPriority] = useState('All');
   const [sortBy, setSortBy] = useState('updated'); // 'updated' | 'created' | 'title' | 'priority'
+  const [onlyMine, setOnlyMine] = useState(false);
   const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'list'
 
   // Modals
@@ -80,6 +81,7 @@ export const Notes = () => {
           isPinned,
           isArchived,
           sortBy,
+          onlyMine: onlyMine ? 'true' : 'false',
         });
 
         if (res.success) {
@@ -96,7 +98,7 @@ export const Notes = () => {
         setLoading(false);
       }
     },
-    [activeTab, search, category, priority, sortBy, pagination.limit, showToast]
+    [activeTab, search, category, priority, sortBy, onlyMine, pagination.limit, showToast]
   );
 
   // Debounce search / filters trigger
@@ -431,6 +433,16 @@ export const Notes = () => {
 
         {/* Filters & Sorting */}
         <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+          {/* Scope Dropdown: Team vs Mine */}
+          <select
+            value={onlyMine ? 'mine' : 'all'}
+            onChange={(e) => setOnlyMine(e.target.value === 'mine')}
+            className="px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs font-semibold text-slate-700 focus:outline-none focus:border-slate-900 transition-all"
+          >
+            <option value="all">All Team Notes</option>
+            <option value="mine">Created by Me</option>
+          </select>
+
           {/* Category Dropdown */}
           <select
             value={category}
